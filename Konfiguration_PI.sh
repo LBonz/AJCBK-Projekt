@@ -20,30 +20,14 @@ import yaml
 import requests
 import coloredlogs
 
-import alexapi.config
-import alexapi.tunein as tunein
-import alexapi.capture
-import alexapi.triggers as triggers
-from alexapi.exceptions import ConfigurationException
-from alexapi.constants import RequestType, PlayerActivity
+import jasperpi.config
+import jasperpi.tunein as tunein
+import jasperpi.capture
+import jasperpi.triggers as triggers
+from jasperpi.exceptions import ConfigurationException
+from jasperpi.constants import RequestType, PlayerActivity
 
-logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
-coloredlogs.DEFAULT_FIELD_STYLES = {
-	'hostname': {'color': 'magenta'},
-	'programname': {'color': 'cyan'},
-	'name': {'color': 'blue'},
-	'levelname': {'color': 'magenta', 'bold': True},
-	'asctime': {'color': 'green'}
-}
-coloredlogs.DEFAULT_LEVEL_STYLES = {
-	'info': {'color': 'blue'},
-	'critical': {'color': 'red', 'bold': True},
-	'error': {'color': 'red'},
-	'debug': {'color': 'green'},
-	'warning': {'color': 'yellow'}
-}
 
-# Get arguments
 parser = optparse.OptionParser()
 parser.add_option('-s', '--silent',
 		dest="silent",
@@ -94,7 +78,6 @@ if not config_exists:
 	logger.critical('Can not find configuration file. Exiting...')
 	sys.exit(1)
 
-# Setup event commands
 event_commands = {
 	'startup': "",
 	'pre_interaction': "",
@@ -121,17 +104,17 @@ class Player(object):
 	playlist_last_item = None
 	progressReportRequired = []
 
-	def __init__(self, config, platform, pHandler): # pylint: disable=redefined-outer-name
+	def __init__(self, config, platform, pHandler): 
 		self.config = config
 		self.platform = platform
-		self.pHandler = pHandler # pylint: disable=invalid-name
+		self.pHandler = pHandler 
 		self.tunein_parser = tunein.TuneIn(5000)
 
 	def play_playlist(self, payload):
 		self.navigation_token = payload['navigationToken']
 		self.playlist_last_item = payload['audioItem']['streams'][-1]['streamId']
 
-		for stream in payload['audioItem']['streams']: # pylint: disable=redefined-outer-name
+		for stream in payload['audioItem']['streams']: 
 
 			streamId = stream['streamId']
 			if stream['progressReportRequired']:
@@ -192,7 +175,6 @@ class Player(object):
 		return ""
 
 
-# Playback handler
 def playback_callback(requestType, playerActivity, streamId):
 
 	return player.playback_callback(requestType, playerActivity, streamId)
@@ -362,8 +344,7 @@ def alexa_getnextitem(navigationToken):
 	response = requests.post(url, headers=headers, data=json.dumps(data))
 	process_response(response)
 
-def alexa_playback_progress_report_request(requestType, playerActivity, stream_id)	# offsetInMilliseconds      Specifies the current position in the track, in milliseconds.
-
+def alexa_playback_progress_report_request(requestType, playerActivity, stream_id)	
 	logger.debug("Sending Playback Progress Report Request...")
 
 	headers = {
@@ -382,23 +363,17 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 	}
 
 	if requestType.upper() == RequestType.ERROR:
-		# The Playback Error method sends a notification to AVS that the audio player has experienced an issue during playback.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackError"
 	elif requestType.upper() == RequestType.FINISHED:
-		# The Playback Finished method sends a notification to AVS that the audio player has completed playback.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackFinished"
-	elif requestType.upper() == PlayerActivity.IDLE: # This is an error as described in https://github.com/alexa-pi/AlexaPi/issues/117
-		# The Playback Idle method sends a notification to AVS that the audio player has reached the end of the playlist.
+	elif requestType.upper() == PlayerActivity.IDLE: 
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackIdle"
 	elif requestType.upper() == RequestType.INTERRUPTED:
-		# The Playback Interrupted method sends a notification to AVS that the audio player has been interrupted.
-		# Note: The audio player may have been interrupted by a previous stop Directive.
+
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackInterrupted"
 	elif requestType.upper() == "PROGRESS_REPORT":
-		# The Playback Progress Report method sends a notification to AVS with the current state of the audio player.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackProgressReport"
 	elif requestType.upper() == RequestType.STARTED:
-		# The Playback Started method sends a notification to AVS that the audio player has started playing.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackStarted"
 
 	response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -430,7 +405,7 @@ def process_response(response):
 			else:
 				logger.debug("NEW CONTENT TYPE RETURNED: %s", payload.get_content_type())
 
-		# Now process the response
+		
 		if 'directives' in j['messageBody']:
 			if not j['messageBody']['directives']:
 				logger.debug("0 Directives received")
@@ -474,7 +449,7 @@ def process_response(response):
 
 						logger.debug("new volume = %s", volume)
 
-		# Additional Audio Iten
+		
 		elif 'audioItem' in j['messageBody']:
 			player.play_playlist(j['messageBody'])
 
@@ -506,14 +481,14 @@ def trigger_process(trigger):
 	if player.is_playing():
 		player.stop()
 
-	# clean up the temp directory
+	
 	if not debug:
 		for some_file in os.listdir(tmp_path):
 			file_path = os.path.join(tmp_path, some_file)
 			try:
 				if os.path.isfile(file_path):
 					os.remove(file_path)
-			except Exception as exp: # pylint: disable=broad-except
+			except Exception as exp: 
 				logger.warning(exp)
 
 	if event_commands['pre_interaction']:
@@ -535,7 +510,7 @@ def trigger_process(trigger):
 		subprocess.Popen(event_commands['post_interaction'], shell=True, stdout=subprocess.PIPE)
 
 
-def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
+def cleanup(signal, frame):   
 	triggers.disable()
 	capture.cleanup()
 	pHandler.cleanup()
