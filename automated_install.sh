@@ -94,10 +94,7 @@ select_option()
   fi
 }
 
-#-------------------------------------------------------
-# Function to retrieve user account credentials
-#-------------------------------------------------------
-# Argument is: the expected length of user input
+
 Credential=""
 get_credential()
 {
@@ -123,7 +120,6 @@ check_credentials()
     parse_user_input 1 0 1
   fi
 
-  # Print out of variables and validate user inputs
   if [ "${#ProductID}" -ge 1 ] && [ "${#ClientID}" -ge 15 ] && [ "${#ClientSecret}" -ge 15 ]; then
     echo "ProductID >> $ProductID"
     echo "ClientID >> $ClientID"
@@ -141,7 +137,7 @@ check_credentials()
   fi
 
   clear
-  # Check ProductID
+#produktschlüssel
   NeedUpdate=0
   echo ""
   if [ "${#ProductID}" -eq 0 ]; then
@@ -165,7 +161,7 @@ check_credentials()
   fi
 
 
-  # Check ClientID
+  #ClientID
   NeedUpdate=0
   echo ""
   if [ "${#ClientID}" -eq 0 ]; then
@@ -195,7 +191,7 @@ check_credentials()
   echo "ClientID is set to >> $ClientID"
   echo "-------------------------------"
 
-  # Check ClientSecret
+  # ClientSecret
   NeedUpdate=0
   echo ""
   if [ "${#ClientSecret}" -eq 0 ]; then
@@ -224,7 +220,7 @@ check_credentials()
   check_credentials
 }
 
-# Arguments are: template_directory, template_name, target_name
+
 use_template()
 {
   Template_Loc=$1
@@ -299,7 +295,7 @@ fi
 
 check_credentials
 
-# Preconfigured variables
+
 OS=rpi
 User=$(id -un)
 Group=$(id -gn)
@@ -352,7 +348,7 @@ else
 fi
 
 Wake_Word_Detection_Enabled="true"
-# Check if user wants to enable Wake Word "Alexa" Detection
+
 clear
 echo "=== Enabling Hands Free Experience using Wake Word \"Alexa\" ===="
 echo ""
@@ -382,51 +378,36 @@ chmod +x $Java_Client_Loc/install-java8.sh
 cd $Java_Client_Loc && bash ./install-java8.sh
 cd $Origin
 
-echo ""
-echo ""
-echo "==============================="
-echo "*******************************"
-echo " *** STARTING INSTALLATION ***"
-echo "  ** this may take a while **"
-echo "   *************************"
-echo "   ========================="
-echo ""
-echo ""
-
-# Install dependencies
-echo "========== Update Aptitude ==========="
+# abhängigkeiten
+#Aptitude
 sudo apt-get update
 sudo apt-get upgrade -yq
 
-echo "========== Installing Git ============"
+# Git 
 sudo apt-get install -y git
 
-echo "========== Getting the code for Kitt-Ai ==========="
+
 cd $Kitt_Ai_Loc
 git clone https://github.com/Kitt-AI/snowboy.git
 
-echo "========== Getting the code for Sensory ==========="
 cd $Sensory_Loc
 git clone https://github.com/Sensory/alexa-rpi.git
 
 cd $Origin
 
-echo "========== Installing Libraries for Kitt-Ai and Sensory: ALSA, Atlas ==========="
+
 sudo apt-get -y install libasound2-dev
 sudo apt-get -y install libatlas-base-dev
 sudo ldconfig
 
-echo "========== Installing WiringPi ==========="
 sudo apt-get -y install wiringpi
 sudo ldconfig
 
-echo "========== Installing VLC and associated Environmental Variables =========="
 sudo apt-get install -y vlc vlc-nox vlc-data
-#Make sure that the libraries can be found
+
 sudo sh -c "echo \"/usr/lib/vlc\" >> /etc/ld.so.conf.d/vlc_lib.conf"
 sudo sh -c "echo \"VLC_PLUGIN_PATH=\"/usr/lib/vlc/plugin\"\" >> /etc/environment"
 
-# Create a libvlc soft link if doesn't exist
 if ! ldconfig -p | grep "libvlc.so "; then
   [ -e $Java_Client_Loc/lib ] || mkdir $Java_Client_Loc/lib
   if ! [ -e $Java_Client_Loc/lib/libvlc.so ]; then
@@ -437,22 +418,22 @@ fi
 
 sudo ldconfig
 
-echo "========== Installing NodeJS =========="
+#NodeJS
 sudo apt-get install -y nodejs npm build-essential
 sudo ln -s /usr/bin/nodejs /usr/bin/node
 node -v
 sudo ldconfig
 
-echo "========== Installing Maven =========="
+# Maven 
 sudo apt-get install -y maven
 mvn -version
 sudo ldconfig
 
-echo "========== Installing OpenSSL and Generating Self-Signed Certificates =========="
+#OpenSSL
 sudo apt-get install -y openssl
 sudo ldconfig
 
-echo "========== Downloading and Building Port Audio Library needed for Kitt-Ai Snowboy =========="
+#Audio Library 
 cd $Kitt_Ai_Loc/snowboy/examples/C++
 bash ./install_portaudio.sh
 sudo ldconfig
@@ -461,46 +442,36 @@ make -j4
 sudo ldconfig
 cd $Origin
 
-echo "========== Generating ssl.cnf =========="
+#ssl
 if [ -f $Java_Client_Loc/ssl.cnf ]; then
   rm $Java_Client_Loc/ssl.cnf
 fi
 use_template $Java_Client_Loc template_ssl_cnf ssl.cnf
 
-echo "========== Generating generate.sh =========="
-if [ -f $Java_Client_Loc/generate.sh ]; then
-  rm $Java_Client_Loc/generate.sh
-fi
-use_template $Java_Client_Loc template_generate_sh generate.sh
 
-echo "========== Executing generate.sh =========="
-chmod +x $Java_Client_Loc/generate.sh
-cd $Java_Client_Loc && bash ./generate.sh
-cd $Origin
 
-echo "========== Configuring Companion Service =========="
 if [ -f $Companion_Service_Loc/config.js ]; then
   rm $Companion_Service_Loc/config.js
 fi
 use_template $Companion_Service_Loc template_config_js config.js
 
-echo "========== Configuring Java Client =========="
+#Java client
 if [ -f $Java_Client_Loc/config.json ]; then
   rm $Java_Client_Loc/config.json
 fi
 use_template $Java_Client_Loc template_config_json config.json
 
-echo "========== Configuring ALSA Devices =========="
+#Alsa
 if [ -f /home/$User/.asoundrc ]; then
   rm /home/$User/.asoundrc
 fi
 printf "pcm.!default {\n  type asym\n   playback.pcm {\n     type plug\n     slave.pcm \"hw:0,0\"\n   }\n   capture.pcm {\n     type plug\n     slave.pcm \"hw:1,0\"\n   }\n}" >> /home/$User/.asoundrc
 
-echo "========== Installing CMake =========="
+ #CMake
 sudo apt-get install -y cmake
 sudo ldconfig
 
-echo "========== Installing Java Client =========="
+#Java Client
 if [ -f $Java_Client_Loc/pom.xml ]; then
   rm $Java_Client_Loc/pom.xml
 fi
@@ -509,16 +480,13 @@ get_alpn_version
 
 cp $Java_Client_Loc/pom_pi.xml $Java_Client_Loc/pom.xml
 
-sed -i "s/The latest version of alpn-boot that supports .*/The latest version of alpn-boot that supports JDK $Java_Version -->/" $Java_Client_Loc/pom.xml
-sed -i "s:<alpn-boot.version>.*</alpn-boot.version>:<alpn-boot.version>$Alpn_Version</alpn-boot.version>:" $Java_Client_Loc/pom.xml
 
 cd $Java_Client_Loc && mvn validate && mvn install && cd $Origin
 
-echo "========== Installing Companion Service =========="
 cd $Companion_Service_Loc && npm install && cd $Origin
 
 if [ "$Wake_Word_Detection_Enabled" = "true" ]; then
-  echo "========== Preparing External dependencies for Wake Word Agent =========="
+  
   mkdir $External_Loc/include
   mkdir $External_Loc/lib
   mkdir $External_Loc/resources
@@ -530,20 +498,15 @@ if [ "$Wake_Word_Detection_Enabled" = "true" ]; then
   cp $Kitt_Ai_Loc/snowboy/lib/$OS/libsnowboy-detect.a $External_Loc/lib/libsnowboy-detect.a
   cp $Kitt_Ai_Loc/snowboy/examples/C++/portaudio/install/lib/libportaudio.a $External_Loc/lib/libportaudio.a
   cp $Kitt_Ai_Loc/snowboy/resources/common.res $External_Loc/resources/common.res
-  cp $Kitt_Ai_Loc/snowboy/resources/alexa/alexa-avs-sample-app/alexa.umdl $External_Loc/resources/alexa.umdl
 
   sudo ln -s /usr/lib/atlas-base/atlas/libblas.so.3 $External_Loc/lib/libblas.so.3
 
-  $Sensory_Loc/alexa-rpi/bin/sdk-license file $Sensory_Loc/alexa-rpi/config/license-key.txt $Sensory_Loc/alexa-rpi/lib/libsnsr.a $Sensory_Loc/alexa-rpi/models/spot-alexa-rpi-20500.snsr $Sensory_Loc/alexa-rpi/models/spot-alexa-rpi-21000.snsr $Sensory_Loc/alexa-rpi/models/spot-alexa-rpi-31000.snsr
-  cp $Sensory_Loc/alexa-rpi/include/snsr.h $External_Loc/include/snsr.h
-  cp $Sensory_Loc/alexa-rpi/lib/libsnsr.a $External_Loc/lib/libsnsr.a
-  cp $Sensory_Loc/alexa-rpi/models/spot-alexa-rpi-31000.snsr $External_Loc/resources/spot-alexa-rpi.snsr
-
+ 
   mkdir $Wake_Word_Agent_Loc/tst/ext
   cp -R $External_Loc/* $Wake_Word_Agent_Loc/tst/ext
   cd $Origin
 
-  echo "========== Compiling Wake Word Agent =========="
+  echo 
   cd $Wake_Word_Agent_Loc/src && cmake . && make -j4
   cd $Wake_Word_Agent_Loc/tst && cmake . && make -j4
 fi
@@ -553,13 +516,6 @@ chown -R $User:$Group /home/$User/.asoundrc
 
 cd $Origin
 
-echo ""
-echo '============================='
-echo '*****************************'
-echo '========= Finished =========='
-echo '*****************************'
-echo '============================='
-echo ""
 
 Number_Terminals=2
 if [ "$Wake_Word_Detection_Enabled" = "true" ]; then
