@@ -12,29 +12,22 @@ SCRIPTNAME=/etc/init.d/$NAME
 export LD_LIBRARY_PATH="$PREFIX/lib"
 export JASPER_CONFIG="$PREFIX/lib/jasper"
 
-# Exit if the package is not installed
+
 [ -x "$DAEMON" ] || exit 0
 
-# Read configuration variable file if it is present
+
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-# Load the VERBOSE setting and other rcS variables
+
 . /lib/init/vars.sh
 
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
-# and status_of_proc is working.
+
 . /lib/lsb/init-functions
 
-#
-# Function that starts the daemon/service
-#
+
 do_start()
 {
-	# Return
-	#   0 if daemon has been started
-	#   1 if daemon was already running
-	#   2 if daemon could not be started
+	
 	start-stop-daemon --start --chuid "$NAME" --verbose --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --nicelevel -19 \
@@ -42,35 +35,26 @@ do_start()
 	                  --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- \
 		$DAEMON_ARGS \
 		|| return 2
-	# Add code here, if necessary, that waits for the process to be ready
-	# to handle requests from services started subsequently which depend
-	# on this one.  As a last resort, sleep for some time.
+	
 }
 
-#
-# Function that stops the daemon/service
+
 #
 do_stop()
 {
-	# Return
-	#   0 if daemon has been stopped
-	#   1 if daemon was already stopped
-	#   2 if daemon could not be stopped
-	#   other if a failure occurred
+
 	start-stop-daemon --stop --verbose --retry=TERM/30/KILL/5 --pidfile $PIDFILE 
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 
 	start-stop-daemon --stop --verbose --oknodo --retry=0/30/KILL/5 --exec $DAEMON
-	[ "$?" = 2 ] && return 2
-	# Many daemons don't delete their pidfiles when they exit.
+	[ "$?" = 2 ] && return 
 	rm -f $PIDFILE
 	return "$RETVAL"
 }
 
-#
-# Function that sends a SIGHUP to the daemon/service
-#
+
+
 do_reload() {
 
 	start-stop-daemon --stop --signal 1 --verbose --pidfile $PIDFILE
@@ -97,20 +81,9 @@ case "$1" in
   status)
 	status_of_proc -p $PIDFILE "$DAEMON" "$NAME" && exit 0 || exit $?
 	;;
-  #reload|force-reload)
-	#
-	# If do_reload() is not implemented then leave this commented out
-	# and leave 'force-reload' as an alias for 'restart'.
-	#
-	#log_daemon_msg "Reloading $DESC" "$NAME"
-	#do_reload
-	#log_end_msg $?
-	#;;
+
   restart|force-reload)
-	#
-	# If the "reload" option is implemented then remove the
-	# 'force-reload' alias
-	#
+
 	log_daemon_msg "Restarting $DESC" "$NAME"
 	do_stop
 	case "$?" in
@@ -118,8 +91,8 @@ case "$1" in
 		do_start
 		case "$?" in
 			0) log_end_msg 0 ;;
-			1) log_end_msg 1 ;; # Old process is still running
-			*) log_end_msg 1 ;; # Failed to start
+			1) log_end_msg 1 ;; 
+			*) log_end_msg 1 ;; 
 		esac
 		;;
 	  *)
